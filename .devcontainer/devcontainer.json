@@ -1,0 +1,1 @@
+{"name":"Reidyy Ticket System","image":"mcr.microsoft.com/devcontainers/python:3.12","forwardPorts":[8000],"portsAttributes":{"8000":{"label":"Private ticket-system demo","onAutoForward":"notify"}},"containerEnv":{"HOST":"0.0.0.0","DEMO_MODE":"true"}}

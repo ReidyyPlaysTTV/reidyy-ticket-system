@@ -1,4 +1,5 @@
 """Reidyy Ticket System. Python 3.11+, standard library only."""
+import threading
 import os,json,sqlite3,secrets,time,hmac,hashlib,urllib.request,urllib.parse
 from pathlib import Path
 from http.server import ThreadingHTTPServer,BaseHTTPRequestHandler
@@ -174,5 +175,8 @@ class Handler(BaseHTTPRequestHandler):
    with urllib.request.urlopen(request,timeout=15) as response:result=json.load(response)
    audit(u,'server.'+d['action'],d['discordId']);return self.output(result)
   return self.output({'error':'Not found'},404)
+import sys
+from features import install, notifications
+install(sys.modules[__name__])
 if __name__=='__main__':
- init();print('Reidyy Ticket System: http://127.0.0.1:8000 | Demo mode:',DEMO);ThreadingHTTPServer((os.getenv('HOST','127.0.0.1'),int(os.getenv('PORT','8000'))),Handler).serve_forever()
+ init();threading.Thread(target=notifications,daemon=True).start();print('Reidyy Ticket System: http://127.0.0.1:8000 | Demo mode:',DEMO);ThreadingHTTPServer((os.getenv('HOST','127.0.0.1'),int(os.getenv('PORT','8000'))),Handler).serve_forever()

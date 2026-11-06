@@ -1,60 +1,71 @@
-# Reidyy Ticket System — standalone testing rebuild
+# Reidyy Ticket System
 
-This is a new, runnable implementation of the agreed portal requirements, not a recovery of the original Sites source. Python 3.11+ is required; no package installation is needed.
+Standalone ticket, case, application and community portal. Python 3.11+; standard library, SQLite, HTML/CSS/JavaScript. This is a rebuild from the original conversation requirements, not recovered Sites source.
 
-## Run locally
+## Run or test in GitHub Codespaces
 
-```sh
-python server.py
-```
-
-Open http://127.0.0.1:8000 and choose a demo role. Management can configure the panel. Data persists in `data.sqlite3`. Stop with Ctrl+C. Back up that database before upgrades.
-
-## Implemented
-
-- Text branding; purple/pink theme; six-action dashboard.
-- Tickets, replies, internal notes, claiming, statuses, participants, closed-ticket player lock, 90-day resolved counts.
-- Cases, report ID search and multiple selection, Discord ID participants, linked staff-to-player tickets.
-- Four editable application forms, minimum answer lengths, attempt/rejection metadata, review decisions, form closures.
-- Ban records, appeal eligibility dates enforced on submission, profile notes.
-- Configurable branding, categories, forms, groups, permissions, Discord role mappings and DM exclusions.
-- Discord OAuth code flow, signed expiring sessions, optional ticket DMs using a bot token.
-- Permission checks are performed by the backend. Demo access is only for local testing.
-
-## Important testing limits
-
-- Management editing uses a JSON configuration editor, rather than the original visual editors.
-- Rules initially contain a placeholder; paste your approved server rules into the `rules` field.
-- The supplied allowlist questions are condensed versions of the 18 requested questions; edit their wording in configuration before public use.
-- Application approval and Allowlist role handling require testing against your Discord server. Discord roles refresh at sign-in; a removed role is seen after signing in again.
-- Disconnecting signs out the current session. Securely transferring an existing identity to a different Discord account is not implemented. Do not use a new account to transfer bans or bypass appeal restrictions.
-- The AI Checker does not produce invented scores; no detection provider is connected.
-- User-role badges, group management and notification controls are configured through management; visual member-directory tools and granular per-action permission toggles remain to be implemented.
-- Optional FiveM HTTP bridge contract is documented below; an actual FiveM bridge resource is not included. Live kicks/bans cannot operate until you implement/install a compatible bridge.
-- Discord DMs are best-effort and synchronous, not a durable retry queue. API failures are recorded in the audit table.
-- This is a local test build, not a production deployment. Review the configuration and complete integration tests before exposing it publicly.
-
-## Discord configuration
-
-Export environment variables from `.env.example` (the application does not automatically load `.env` files). Register an OAuth redirect URL of `PUBLIC_URL/auth/callback`. OAuth requests `identify guilds.members.read`; the user must belong to `DISCORD_GUILD_ID`. Set the client ID, client secret, guild ID and optional bot token. In management set role mappings as role-ID arrays, for example `"admin":["123456789012345678"]`, and set `allowlistRole`. Set `dmExcludedRoles` to the Discord role IDs whose members should not receive notifications.
-
-Bot and OAuth secrets must remain environment variables. Never commit them. Use HTTPS and a stable random SESSION_SECRET. Set DEMO_MODE=false before public deployment. When using a proxy, configure host/origin routing correctly. OAuth/DM integrations are supplied but have not been tested with real credentials.
-
-## Optional FiveM bridge contract
-
-`FIVEM_BRIDGE_URL` must accept authenticated JSON POST requests with `Authorization: Bearer FIVEM_BRIDGE_TOKEN` and body `{ "action":"kick|ban", "discordId":"...", "reason":"..." }`. It must verify the token server-side, locate the matching `discord:` identifier, persist bans, enforce them during player connection, execute the requested action, and return JSON. Never expose an unauthenticated game action endpoint. The portal records bans/appeal dates separately; keep live bridge ban state synchronized before use.
-
-## GitHub
-
-Create an empty **private** repository, then run from this directory:
+Open **Code → Codespaces → Create codespace on main**. In the terminal:
 
 ```sh
-git init
-git add .
-git commit -m "Add standalone ticket system test build"
-git branch -M main
-git remote add origin https://github.com/YOUR-ACCOUNT/reidyy-ticket-system.git
-git push -u origin main
+HOST=0.0.0.0 python3 server.py
 ```
 
-The assistant can publish after GitHub authorization is available. No credentials are included in this project.
+Open port 8000 in the Ports tab. **Keep the forwarded port private while demo mode is enabled.** Choose a demo group at sign-in. Management shows all settings. Use a second private browser session for a different demo player. Local Windows: `py server.py`, then http://127.0.0.1:8000. SQLite data persists in `data.sqlite3`.
+
+Pull the newest code before testing. Stop the old process first. Back up the database before upgrading; the first v2 start migrates ticket fields and installs the full default forms/rules. Existing records remain, but the legacy default management configuration is replaced by the v2 defaults. Do not delete your database unless intentionally resetting the test site.
+
+```sh
+python -m unittest discover -s tests -v
+node --check public/workflows.js
+```
+
+## Features
+
+- Reidyy text branding, optional header and staff signature logos, purple/pink customization and responsive hover effects.
+- Dashboard actions: Allowlist, Developer, Staff, App Reviewer, custom work and tickets.
+- Personal tickets plus staff Open Tickets workspace; claimed/unclaimed/mine/resolved filters and ID/title/player search.
+- Ticket statuses, priorities, staff assignment, participant management, private notes, evidence URLs, role badges, staff signatures and read-only resolved tickets.
+- Distinct category icons and visual add/edit/remove category/template editors. Existing tickets survive category removal.
+- Unique resolved-ticket counts for each staff member over a rolling 90-day period and audit-log viewer.
+- Cases with primary/related/duplicate report relationships, ID/title search and multi-select attachments, removals, Discord-ID players and auto-linked staff-to-player outreach.
+- Linked-case notice visible to ticket staff; case contents remain permission-restricted.
+- Supplied 18 allowlist questions and community rules, including property-robbery guidance; searchable/expandable rules and management editor.
+- Application question editor: add/remove, answer types, required flags, minimum lengths and no per-answer maximum. Overall HTTP requests have a 20 MB ceiling.
+- Drafts saved per account/form in the browser; live answer character counters.
+- Submission timestamp, previous attempts, last rejection reason, complete review decision history.
+- Applications open/closed controls, dashboard availability and server-side submission restrictions.
+- Approved applications block repeat submission. An allowlist applicant must actually receive and then lose the Allowlist role before reapplying. Discord role changes refresh within 60 seconds; a failed role check fails closed.
+- Supplied acceptance/denial response templates. Management adds/edits/removes templates. Reviewers can combine several per answer or final decision, edit the text, save feedback and queue DMs.
+- Reviewer DM-service health indicator. This tests Discord REST reachability, not the Discord client's green presence indicator.
+- Allowlisted, Non Allowlisted, App Reviewer, Support, Admin and Management groups; custom groups, additive role mappings and granular action permissions.
+- Optional Discord OAuth, verified account relinking with stable panel identity, bans and tickets retained across relinks. An already-owned Discord cannot be merged silently.
+- Optional bot DMs for ticket responses/participants and application feedback/decisions, exclusion role IDs, persistent queue and bounded retry/backoff.
+- Player notes, bans and appeal eligibility dates; backend appeal-date enforcement and live FiveM kick/ban/unban bridge resource included.
+
+## Discord setup
+
+The application **does not load `.env` automatically**. Export variables from `.env.example` in your shell, Codespaces secrets or hosting environment. Set `DEMO_MODE=false` for real operation, a stable random `SESSION_SECRET`, and HTTPS `PUBLIC_URL`. Configure `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_GUILD_ID` and optionally `DISCORD_BOT_TOKEN`.
+
+OAuth redirect: `PUBLIC_URL/auth/callback`. Scopes: `identify guilds.members.read`. Users must belong to the guild. Management → Discord & FiveM maps Discord role IDs to panel groups, sets the Allowlist role, and configures excluded notification roles. Tokens stay in environment variables, never Git or the configuration editor.
+
+Bootstrap management by configuring `BOOTSTRAP_MANAGEMENT_ROLE` to a Discord role ID before first real sign-in (see below). Demo mode permits role selection, so never expose it publicly.
+
+Account → Verify and link a different Discord uses OAuth with the old panel session. Deauth removes Discord and permissions; keep that session open to link another Discord. Management assistance is needed if both the old session and Discord account are lost. New accounts cannot claim an existing linked profile without verification. Platform-wide duplicate-person detection is not possible: genuinely separate Discord identities cannot be identified as the same human automatically.
+
+## FiveM resource
+
+1. Copy `fivem/reidyy_bridge` to the FiveM resources folder.
+2. In `server.cfg`, set a strong secret with `set reidyy_bridge_token "..."`, then `ensure reidyy_bridge`.
+3. Set `FIVEM_BRIDGE_URL=http://YOUR_PRIVATE_SERVER:30120/reidyy_bridge/` and matching `FIVEM_BRIDGE_TOKEN` on the panel. Use private networking or an authenticated HTTPS reverse proxy.
+4. Kick/ban by Discord ID from Players & bans. The bridge uses the server's `discord:` identifier. Players must have a Discord identifier for matching and reconnect ban enforcement.
+5. Bridge bans persist in the resource's local `bans.json`; retain that file across resource upgrades. Panel-created live bans carry appeal dates. Revoking a live ban calls the bridge unban action before clearing the panel record. Locally recorded bans do not themselves ban a player in FiveM.
+
+## Optional AI provider
+
+No score is fabricated. Without `AI_CHECK_URL`, the checker reports “Not scored”. An optional trusted adapter can accept `POST {"text":"answer"}` with `Authorization: Bearer AI_CHECK_TOKEN` and return `{"score":0..100}`. The UI marks a provider score **above 65** in red, with a warning that it is an estimate and requires human review. There is no automatic rejection or ban. Provider access and external text processing must be configured intentionally.
+
+## Known verification limits
+
+Backend workflows have automated tests. Real Discord OAuth, role changes, DM delivery and account relinking need testing with your guild and credentials. The FiveM resource needs in-server verification; no game server was available during implementation. Browser behavior has syntax/runtime smoke checks, not a complete browser end-to-end suite. The original hosted Site is not modified by this repository.
+
+For production, use HTTPS, a managed reverse proxy and backups. This standard-library HTTP server is intended for controlled testing and small deployments, not an independently security-audited production service. Secrets, member data, local bans and the database are excluded from Git.
